@@ -1,0 +1,412 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "tool_name": "curl",
+    "description": "curl HTTP client - demonstrates HTTP methods, headers, auth, and various options"
+  },
+  "generation": {
+    "max_args": 12,
+    "equals_form_probability": 0.3
+  },
+  "syntax": {
+    "allow_duplicates": true
+  },
+  "arguments": [
+    {
+      "name": "request",
+      "flags": ["-X", "--request"],
+      "description": "HTTP method",
+      "probability": 0.4,
+      "value": {
+        "kind": "enum",
+        "values": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+      }
+    },
+    {
+      "name": "header",
+      "flags": ["-H", "--header"],
+      "description": "HTTP header",
+      "probability": 0.5,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "Content-Type: application/json",
+          "Content-Type: application/x-www-form-urlencoded",
+          "Content-Type: text/plain",
+          "Accept: application/json",
+          "Accept: text/html",
+          "Accept: */*",
+          "Authorization: Bearer token123",
+          "X-API-Key: key123",
+          "Cache-Control: no-cache",
+          "User-Agent: Mozilla/5.0"
+        ]
+      },
+      "repeat_flag": {
+        "min_occurs": 1,
+        "max_occurs": 5
+      }
+    },
+    {
+      "name": "data",
+      "flags": ["-d", "--data"],
+      "description": "HTTP POST data",
+      "probability": 0.3,
+      "group": "data_source",
+      "value": {
+        "kind": "enum",
+        "values": [
+          "{\"key\":\"value\"}",
+          "{\"name\":\"test\",\"id\":123}",
+          "param1=value1&param2=value2",
+          "{\"items\":[1,2,3]}",
+          "{\"enabled\":true}"
+        ]
+      }
+    },
+    {
+      "name": "data_raw",
+      "flags": ["--data-raw"],
+      "description": "HTTP POST raw data",
+      "probability": 0.15,
+      "group": "data_source",
+      "value": {
+        "kind": "enum",
+        "values": [
+          "raw text data",
+          "{\"json\":\"data\"}",
+          "key=value"
+        ]
+      }
+    },
+    {
+      "name": "data_binary",
+      "flags": ["--data-binary"],
+      "description": "HTTP POST binary data",
+      "probability": 0.1,
+      "group": "data_source",
+      "value": { "kind": "file" }
+    },
+    {
+      "name": "form",
+      "flags": ["-F", "--form"],
+      "description": "Multipart form data",
+      "probability": 0.2,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "file=@/tmp/test.txt",
+          "name=testfile",
+          "field=value",
+          "upload=@/tmp/data.json"
+        ]
+      },
+      "repeat_flag": {
+        "min_occurs": 1,
+        "max_occurs": 3
+      }
+    },
+    {
+      "name": "output",
+      "flags": ["-o", "--output"],
+      "description": "Write output to file",
+      "probability": 0.25,
+      "value": { "kind": "file" }
+    },
+    {
+      "name": "output_stdout",
+      "flags": ["-O", "--remote-name"],
+      "description": "Write output using remote filename",
+      "probability": 0.15,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "silent",
+      "flags": ["-s", "--silent"],
+      "description": "Silent mode",
+      "probability": 0.3,
+      "group": "verbosity",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "verbose",
+      "flags": ["-v", "--verbose"],
+      "description": "Verbose output",
+      "probability": 0.25,
+      "group": "verbosity",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "show_error",
+      "flags": ["-S", "--show-error"],
+      "description": "Show error with silent mode",
+      "probability": 0.2,
+      "depends_on": ["silent"],
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "include",
+      "flags": ["-i", "--include"],
+      "description": "Include headers in output",
+      "probability": 0.2,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "head",
+      "flags": ["-I", "--head"],
+      "description": "Show headers only",
+      "probability": 0.15,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "location",
+      "flags": ["-L", "--location"],
+      "description": "Follow redirects",
+      "probability": 0.4,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "max_redirs",
+      "flags": ["--max-redirs"],
+      "description": "Maximum redirects",
+      "probability": 0.15,
+      "depends_on": ["location"],
+      "value": { "kind": "integer", "min": 1, "max": 50 }
+    },
+    {
+      "name": "user",
+      "flags": ["-u", "--user"],
+      "description": "Username:password",
+      "probability": 0.2,
+      "group": "auth",
+      "value": {
+        "kind": "enum",
+        "values": ["user:pass", "admin:secret", "test:test123", "api:key"]
+      }
+    },
+    {
+      "name": "basic",
+      "flags": ["--basic"],
+      "description": "Use HTTP Basic auth",
+      "probability": 0.1,
+      "depends_on": ["user"],
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "digest",
+      "flags": ["--digest"],
+      "description": "Use HTTP Digest auth",
+      "probability": 0.05,
+      "depends_on": ["user"],
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "connect_timeout",
+      "flags": ["--connect-timeout"],
+      "description": "Connection timeout in seconds",
+      "probability": 0.25,
+      "value": { "kind": "integer", "min": 1, "max": 300 }
+    },
+    {
+      "name": "max_time",
+      "flags": ["-m", "--max-time"],
+      "description": "Maximum time in seconds",
+      "probability": 0.25,
+      "value": { "kind": "integer", "min": 1, "max": 3600 }
+    },
+    {
+      "name": "retry",
+      "flags": ["--retry"],
+      "description": "Retry count",
+      "probability": 0.15,
+      "value": { "kind": "integer", "min": 1, "max": 10 }
+    },
+    {
+      "name": "retry_delay",
+      "flags": ["--retry-delay"],
+      "description": "Delay between retries",
+      "probability": 0.1,
+      "depends_on": ["retry"],
+      "value": { "kind": "integer", "min": 1, "max": 60 }
+    },
+    {
+      "name": "compressed",
+      "flags": ["--compressed"],
+      "description": "Request compressed response",
+      "probability": 0.35,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "insecure",
+      "flags": ["-k", "--insecure"],
+      "description": "Allow insecure SSL connections",
+      "probability": 0.2,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "cacert",
+      "flags": ["--cacert"],
+      "description": "CA certificate file",
+      "probability": 0.1,
+      "value": { "kind": "file" }
+    },
+    {
+      "name": "cert",
+      "flags": ["-E", "--cert"],
+      "description": "Client certificate file",
+      "probability": 0.1,
+      "value": { "kind": "file" }
+    },
+    {
+      "name": "key",
+      "flags": ["--key"],
+      "description": "Private key file",
+      "probability": 0.1,
+      "depends_on": ["cert"],
+      "value": { "kind": "file" }
+    },
+    {
+      "name": "proxy",
+      "flags": ["-x", "--proxy"],
+      "description": "Use proxy",
+      "probability": 0.15,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "http://proxy:8080",
+          "http://localhost:3128",
+          "socks5://proxy:1080"
+        ]
+      }
+    },
+    {
+      "name": "user_agent",
+      "flags": ["-A", "--user-agent"],
+      "description": "User agent string",
+      "probability": 0.2,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "Mozilla/5.0",
+          "curl/7.68.0",
+          "CustomAgent/1.0",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        ]
+      }
+    },
+    {
+      "name": "referer",
+      "flags": ["-e", "--referer"],
+      "description": "Referer URL",
+      "probability": 0.1,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "https://google.com",
+          "https://example.com",
+          "https://referrer.test"
+        ]
+      }
+    },
+    {
+      "name": "cookie",
+      "flags": ["-b", "--cookie"],
+      "description": "Send cookies",
+      "probability": 0.15,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "session=abc123",
+          "user=test; token=xyz",
+          "auth=bearer_token_here"
+        ]
+      }
+    },
+    {
+      "name": "cookie_jar",
+      "flags": ["-c", "--cookie-jar"],
+      "description": "Save cookies to file",
+      "probability": 0.1,
+      "value": { "kind": "file" }
+    },
+    {
+      "name": "fail",
+      "flags": ["-f", "--fail"],
+      "description": "Fail silently on HTTP errors",
+      "probability": 0.2,
+      "group": "fail_mode",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "fail_with_body",
+      "flags": ["--fail-with-body"],
+      "description": "Fail on HTTP errors but save body",
+      "probability": 0.1,
+      "group": "fail_mode",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "write_out",
+      "flags": ["-w", "--write-out"],
+      "description": "Format string for output",
+      "probability": 0.15,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "%{http_code}",
+          "%{time_total}",
+          "%{size_download}",
+          "%{http_code}\\n%{time_total}\\n"
+        ]
+      }
+    },
+    {
+      "name": "create_dirs",
+      "flags": ["--create-dirs"],
+      "description": "Create necessary directories for output",
+      "probability": 0.1,
+      "depends_on": ["output"],
+      "value": { "kind": "flag" }
+    }
+  ],
+  "positional": [
+    {
+      "name": "url",
+      "position": 0,
+      "required": true,
+      "variadic": false,
+      "value": {
+        "kind": "enum",
+        "values": [
+          "https://httpbin.org/get",
+          "https://httpbin.org/post",
+          "https://httpbin.org/put",
+          "https://httpbin.org/delete",
+          "https://api.example.com/v1/users",
+          "https://api.example.com/v1/items",
+          "http://localhost:8080/api/test",
+          "http://localhost:3000/health",
+          "https://jsonplaceholder.typicode.com/posts",
+          "https://jsonplaceholder.typicode.com/users"
+        ]
+      }
+    }
+  ],
+  "rules": [
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["verbosity"],
+      "description": "Cannot be both silent and verbose"
+    },
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["data_source"],
+      "description": "Use only one data source type"
+    },
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["fail_mode"],
+      "description": "Use only one fail mode"
+    }
+  ]
+}

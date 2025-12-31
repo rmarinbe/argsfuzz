@@ -1,0 +1,8 @@
+# argsfuzz dependencies
+
+# Required: JSON schema validation
+jsonschema>=4.0.0
+
+# Optional: Reverse regex generation for pattern-based strings/files/directories
+# Without this, pattern-based generation falls back to simpler methods
+rstr>=3.0.0

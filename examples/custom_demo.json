@@ -1,0 +1,80 @@
+{
+  "$schema": "../argsfuzz-schema.json",
+  "metadata": {
+    "version": "1.0",
+    "tool_name": "network-tool",
+    "description": "Example demonstrating custom generators for network tool arguments"
+  },
+  "generation": {
+    "max_args": 10
+  },
+  "arguments": [
+    {
+      "name": "host",
+      "description": "Target host IP address",
+      "flags": ["-H", "--host"],
+      "probability": 0.8,
+      "required": true,
+      "value": {
+        "kind": "custom",
+        "generator": "ip_address",
+        "params": {
+          "private_only": true,
+          "include_localhost": true
+        }
+      }
+    },
+    {
+      "name": "port",
+      "description": "Target port or port range",
+      "flags": ["-p", "--port"],
+      "probability": 0.7,
+      "value": {
+        "kind": "custom",
+        "generator": "port_range",
+        "params": {
+          "min_port": 80,
+          "max_port": 9999,
+          "allow_range": true,
+          "range_probability": 0.3
+        }
+      }
+    },
+    {
+      "name": "session_id",
+      "description": "Session identifier (UUID)",
+      "flags": ["-s", "--session"],
+      "probability": 0.5,
+      "value": {
+        "kind": "custom",
+        "generator": "uuid",
+        "params": {
+          "format": "standard"
+        }
+      }
+    },
+    {
+      "name": "timestamp",
+      "description": "Timestamp for operation",
+      "flags": ["-t", "--time"],
+      "probability": 0.4,
+      "value": {
+        "kind": "custom",
+        "generator": "date_time",
+        "params": {
+          "format": "iso",
+          "year_min": 2023,
+          "year_max": 2025
+        }
+      }
+    },
+    {
+      "name": "verbose",
+      "description": "Enable verbose output",
+      "flags": ["-v", "--verbose"],
+      "probability": 0.3,
+      "value": { "kind": "flag" }
+    }
+  ],
+  "rules": []
+}

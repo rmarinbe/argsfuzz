@@ -1,0 +1,428 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "tool_name": "git",
+    "description": "Git version control - demonstrates subcommands, positional args, groups, and mutually_exclusive rules"
+  },
+  "generation": {
+    "max_args": 8,
+    "equals_form_probability": 0.2
+  },
+  "syntax": {
+    "allow_duplicates": false
+  },
+  "arguments": [
+    {
+      "name": "version",
+      "flags": ["--version"],
+      "description": "Print git version",
+      "probability": 0.1,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "help",
+      "flags": ["-h", "--help"],
+      "description": "Print help message",
+      "probability": 0.1,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "config_global",
+      "flags": ["--global"],
+      "description": "Use global config file",
+      "probability": 0.2,
+      "group": "config_scope",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "config_local",
+      "flags": ["--local"],
+      "description": "Use repository config file",
+      "probability": 0.2,
+      "group": "config_scope",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "config_system",
+      "flags": ["--system"],
+      "description": "Use system config file",
+      "probability": 0.1,
+      "group": "config_scope",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "verbose",
+      "flags": ["-v", "--verbose"],
+      "description": "Be verbose",
+      "probability": 0.3,
+      "group": "verbosity",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "quiet",
+      "flags": ["-q", "--quiet"],
+      "description": "Be quiet",
+      "probability": 0.2,
+      "group": "verbosity",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "git_dir",
+      "flags": ["--git-dir"],
+      "description": "Set path to repository",
+      "probability": 0.1,
+      "value": { "kind": "directory" }
+    },
+    {
+      "name": "work_tree",
+      "flags": ["--work-tree"],
+      "description": "Set path to working tree",
+      "probability": 0.1,
+      "value": { "kind": "directory" }
+    },
+    {
+      "name": "no_pager",
+      "flags": ["--no-pager"],
+      "description": "Do not pipe output into a pager",
+      "probability": 0.2,
+      "value": { "kind": "flag" }
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "commit",
+      "description": "Record changes to the repository",
+      "probability": 0.25,
+      "arguments": [
+        {
+          "name": "message",
+          "flags": ["-m", "--message"],
+          "description": "Commit message",
+          "probability": 0.9,
+          "value": { "kind": "string" }
+        },
+        {
+          "name": "all",
+          "flags": ["-a", "--all"],
+          "description": "Commit all changed files",
+          "probability": 0.4,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "amend",
+          "flags": ["--amend"],
+          "description": "Amend previous commit",
+          "probability": 0.2,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "no_edit",
+          "flags": ["--no-edit"],
+          "description": "Use selected commit message without editing",
+          "probability": 0.2,
+          "depends_on": ["amend"],
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "author",
+          "flags": ["--author"],
+          "description": "Override author",
+          "probability": 0.1,
+          "value": { 
+            "kind": "string",
+            "pattern": "[A-Za-z ]+ <[a-z]+@[a-z]+\\.[a-z]+>"
+          }
+        },
+        {
+          "name": "signoff",
+          "flags": ["-s", "--signoff"],
+          "description": "Add Signed-off-by trailer",
+          "probability": 0.15,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "gpg_sign",
+          "flags": ["-S", "--gpg-sign"],
+          "description": "GPG sign commit",
+          "probability": 0.1,
+          "group": "gpg_signing",
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "no_gpg_sign",
+          "flags": ["--no-gpg-sign"],
+          "description": "Do not GPG sign commit",
+          "probability": 0.1,
+          "group": "gpg_signing",
+          "value": { "kind": "flag" }
+        }
+      ],
+      "positional": [
+        {
+          "name": "pathspec",
+          "position": 0,
+          "required": false,
+          "variadic": true,
+          "value": { "kind": "file" }
+        }
+      ]
+    },
+    {
+      "name": "push",
+      "description": "Update remote refs",
+      "probability": 0.2,
+      "arguments": [
+        {
+          "name": "force",
+          "flags": ["-f", "--force"],
+          "description": "Force push",
+          "probability": 0.2,
+          "group": "force_mode",
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "force_with_lease",
+          "flags": ["--force-with-lease"],
+          "description": "Force push with lease",
+          "probability": 0.15,
+          "group": "force_mode",
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "set_upstream",
+          "flags": ["-u", "--set-upstream"],
+          "description": "Set upstream for tracking",
+          "probability": 0.3,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "all",
+          "flags": ["--all"],
+          "description": "Push all branches",
+          "probability": 0.15,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "tags",
+          "flags": ["--tags"],
+          "description": "Push tags",
+          "probability": 0.2,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "dry_run",
+          "flags": ["-n", "--dry-run"],
+          "description": "Dry run",
+          "probability": 0.2,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "delete",
+          "flags": ["-d", "--delete"],
+          "description": "Delete remote branch",
+          "probability": 0.1,
+          "value": { "kind": "flag" }
+        }
+      ],
+      "positional": [
+        {
+          "name": "remote",
+          "position": 0,
+          "required": false,
+          "value": { 
+            "kind": "enum",
+            "values": ["origin", "upstream", "fork", "backup"]
+          }
+        },
+        {
+          "name": "refspec",
+          "position": 1,
+          "required": false,
+          "value": {
+            "kind": "enum",
+            "values": ["main", "master", "develop", "feature/test", "HEAD"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "pull",
+      "description": "Fetch and integrate remote changes",
+      "probability": 0.2,
+      "arguments": [
+        {
+          "name": "rebase",
+          "flags": ["-r", "--rebase"],
+          "description": "Rebase instead of merge",
+          "probability": 0.4,
+          "group": "merge_strategy",
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "no_rebase",
+          "flags": ["--no-rebase"],
+          "description": "Merge instead of rebase",
+          "probability": 0.2,
+          "group": "merge_strategy",
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "ff_only",
+          "flags": ["--ff-only"],
+          "description": "Fast-forward only",
+          "probability": 0.3,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "autostash",
+          "flags": ["--autostash"],
+          "description": "Automatically stash/pop changes",
+          "probability": 0.25,
+          "value": { "kind": "flag" }
+        }
+      ],
+      "positional": [
+        {
+          "name": "remote",
+          "position": 0,
+          "required": false,
+          "value": { 
+            "kind": "enum",
+            "values": ["origin", "upstream"]
+          }
+        },
+        {
+          "name": "branch",
+          "position": 1,
+          "required": false,
+          "value": {
+            "kind": "enum",
+            "values": ["main", "master", "develop"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "log",
+      "description": "Show commit logs",
+      "probability": 0.15,
+      "arguments": [
+        {
+          "name": "oneline",
+          "flags": ["--oneline"],
+          "description": "One line per commit",
+          "probability": 0.5,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "graph",
+          "flags": ["--graph"],
+          "description": "Show ASCII graph",
+          "probability": 0.4,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "all",
+          "flags": ["--all"],
+          "description": "Show all branches",
+          "probability": 0.3,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "max_count",
+          "flags": ["-n", "--max-count"],
+          "description": "Limit number of commits",
+          "probability": 0.5,
+          "value": { "kind": "integer", "min": 1, "max": 100 }
+        },
+        {
+          "name": "since",
+          "flags": ["--since"],
+          "description": "Show commits since date",
+          "probability": 0.2,
+          "value": { 
+            "kind": "enum",
+            "values": ["1.week", "2.weeks", "1.month", "3.months", "1.year"]
+          }
+        },
+        {
+          "name": "author",
+          "flags": ["--author"],
+          "description": "Filter by author",
+          "probability": 0.2,
+          "value": { "kind": "string" }
+        },
+        {
+          "name": "format",
+          "flags": ["--format", "--pretty"],
+          "description": "Output format",
+          "probability": 0.3,
+          "value": {
+            "kind": "enum",
+            "values": ["oneline", "short", "medium", "full", "fuller", "email", "raw"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "checkout",
+      "description": "Switch branches or restore files",
+      "probability": 0.2,
+      "arguments": [
+        {
+          "name": "new_branch",
+          "flags": ["-b"],
+          "description": "Create and checkout new branch",
+          "probability": 0.3,
+          "group": "branch_create",
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "new_branch_force",
+          "flags": ["-B"],
+          "description": "Create/reset and checkout branch",
+          "probability": 0.1,
+          "group": "branch_create",
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "force",
+          "flags": ["-f", "--force"],
+          "description": "Force checkout",
+          "probability": 0.15,
+          "value": { "kind": "flag" }
+        },
+        {
+          "name": "track",
+          "flags": ["-t", "--track"],
+          "description": "Set up tracking",
+          "probability": 0.2,
+          "value": { "kind": "flag" }
+        }
+      ],
+      "positional": [
+        {
+          "name": "branch_or_commit",
+          "position": 0,
+          "required": false,
+          "value": {
+            "kind": "enum",
+            "values": ["main", "master", "develop", "HEAD~1", "HEAD~2", "origin/main"]
+          }
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["config_scope"],
+      "description": "Can only use one config scope (--global, --local, --system)"
+    },
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["verbosity"],
+      "description": "Cannot be verbose and quiet at the same time"
+    }
+  ]
+}

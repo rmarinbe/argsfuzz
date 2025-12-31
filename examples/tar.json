@@ -1,0 +1,259 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "tool_name": "tar",
+    "description": "GNU tar - demonstrates required args, groups, and file/directory handling"
+  },
+  "generation": {
+    "max_args": 10,
+    "equals_form_probability": 0.1
+  },
+  "syntax": {
+    "allow_duplicates": false
+  },
+  "arguments": [
+    {
+      "name": "create",
+      "flags": ["-c", "--create"],
+      "description": "Create a new archive",
+      "probability": 0.35,
+      "group": "operation",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "extract",
+      "flags": ["-x", "--extract", "--get"],
+      "description": "Extract files from archive",
+      "probability": 0.35,
+      "group": "operation",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "list",
+      "flags": ["-t", "--list"],
+      "description": "List archive contents",
+      "probability": 0.2,
+      "group": "operation",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "append",
+      "flags": ["-r", "--append"],
+      "description": "Append files to archive",
+      "probability": 0.05,
+      "group": "operation",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "update",
+      "flags": ["-u", "--update"],
+      "description": "Update archive with newer files",
+      "probability": 0.05,
+      "group": "operation",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "file",
+      "flags": ["-f", "--file"],
+      "description": "Archive file name",
+      "probability": 0.95,
+      "value": { "kind": "file" }
+    },
+    {
+      "name": "gzip",
+      "flags": ["-z", "--gzip", "--gunzip"],
+      "description": "Filter through gzip",
+      "probability": 0.3,
+      "group": "compression",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "bzip2",
+      "flags": ["-j", "--bzip2"],
+      "description": "Filter through bzip2",
+      "probability": 0.15,
+      "group": "compression",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "xz",
+      "flags": ["-J", "--xz"],
+      "description": "Filter through xz",
+      "probability": 0.15,
+      "group": "compression",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "zstd",
+      "flags": ["--zstd"],
+      "description": "Filter through zstd",
+      "probability": 0.1,
+      "group": "compression",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "auto_compress",
+      "flags": ["-a", "--auto-compress"],
+      "description": "Use archive suffix to determine compression",
+      "probability": 0.2,
+      "group": "compression",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "verbose",
+      "flags": ["-v", "--verbose"],
+      "description": "Verbose output",
+      "probability": 0.5,
+      "value": { "kind": "flag" },
+      "repeat_flag": {
+        "min_occurs": 1,
+        "max_occurs": 3
+      }
+    },
+    {
+      "name": "directory",
+      "flags": ["-C", "--directory"],
+      "description": "Change to directory before operation",
+      "probability": 0.3,
+      "value": { "kind": "directory" }
+    },
+    {
+      "name": "preserve_permissions",
+      "flags": ["-p", "--preserve-permissions", "--same-permissions"],
+      "description": "Preserve file permissions",
+      "probability": 0.25,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "keep_old_files",
+      "flags": ["-k", "--keep-old-files"],
+      "description": "Don't replace existing files",
+      "probability": 0.15,
+      "group": "overwrite_mode",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "overwrite",
+      "flags": ["--overwrite"],
+      "description": "Overwrite existing files",
+      "probability": 0.15,
+      "group": "overwrite_mode",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "exclude",
+      "flags": ["--exclude"],
+      "description": "Exclude pattern",
+      "probability": 0.2,
+      "value": { 
+        "kind": "enum",
+        "values": ["*.log", "*.tmp", ".git", "node_modules", "__pycache__", "*.pyc", ".DS_Store"]
+      },
+      "repeat_flag": {
+        "min_occurs": 1,
+        "max_occurs": 5
+      }
+    },
+    {
+      "name": "strip_components",
+      "flags": ["--strip-components"],
+      "description": "Strip leading path components",
+      "probability": 0.15,
+      "value": { "kind": "integer", "min": 1, "max": 5 }
+    },
+    {
+      "name": "totals",
+      "flags": ["--totals"],
+      "description": "Print total bytes written",
+      "probability": 0.1,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "wildcards",
+      "flags": ["--wildcards"],
+      "description": "Use wildcards in patterns",
+      "probability": 0.15,
+      "group": "wildcard_mode",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "no_wildcards",
+      "flags": ["--no-wildcards"],
+      "description": "No wildcards in patterns",
+      "probability": 0.1,
+      "group": "wildcard_mode",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "anchored",
+      "flags": ["--anchored"],
+      "description": "Patterns match file name start",
+      "probability": 0.1,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "no_same_owner",
+      "flags": ["--no-same-owner"],
+      "description": "Don't extract owner/group info",
+      "probability": 0.2,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "numeric_owner",
+      "flags": ["--numeric-owner"],
+      "description": "Use numeric uid/gid",
+      "probability": 0.1,
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "checkpoint",
+      "flags": ["--checkpoint"],
+      "description": "Display progress every N records",
+      "probability": 0.1,
+      "value": { "kind": "integer", "min": 1, "max": 1000 }
+    },
+    {
+      "name": "ignore_zeros",
+      "flags": ["-i", "--ignore-zeros"],
+      "description": "Ignore zeroed blocks",
+      "probability": 0.05,
+      "value": { "kind": "flag" }
+    }
+  ],
+  "positional": [
+    {
+      "name": "files",
+      "position": 0,
+      "required": false,
+      "variadic": true,
+      "value": { "kind": "file" }
+    }
+  ],
+  "rules": [
+    {
+      "type": "one_of_required",
+      "arguments": ["operation"],
+      "description": "Must specify an operation (create, extract, list, etc.)"
+    },
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["operation"],
+      "description": "Can only perform one operation at a time"
+    },
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["compression"],
+      "description": "Can only use one compression method"
+    },
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["overwrite_mode"],
+      "description": "Cannot both keep old files and overwrite"
+    },
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["wildcard_mode"],
+      "description": "Cannot use both --wildcards and --no-wildcards"
+    }
+  ]
+}

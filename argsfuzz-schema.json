@@ -1,0 +1,407 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://intel.com/schemas/cli-fuzz-config.json",
+  "title": "CLI Argument Fuzzing Configuration Schema",
+  "description": "Schema for generating valid and invalid command-line argument combinations for fuzzing command-line tools. Supports flags, options, positional arguments, and subcommands.",
+  "type": "object",
+  "required": ["metadata", "arguments"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Metadata about the fuzzing configuration",
+      "required": ["version"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Schema version following semantic versioning",
+          "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this fuzzing configuration"
+        },
+        "tool_name": {
+          "type": "string",
+          "description": "Name of the command-line tool being fuzzed"
+        },
+        "tool_version": {
+          "type": "string",
+          "description": "Version of the tool this configuration targets"
+        }
+      }
+    },
+
+    "generation": {
+      "type": "object",
+      "description": "Global settings for argument generation behavior",
+      "properties": {
+        "max_args": {
+          "type": "integer",
+          "description": "Maximum number of arguments to generate in a single command",
+          "minimum": 1,
+          "default": 20
+        },
+        "equals_form_probability": {
+          "type": "number",
+          "description": "Probability (0.0-1.0) of using --flag=value form instead of --flag value",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.0
+        }
+      }
+    },
+
+    "syntax": {
+      "type": "object",
+      "description": "Syntax rules for the command-line tool",
+      "properties": {
+        "allow_duplicates": {
+          "type": "boolean",
+          "description": "Whether duplicate flags/options are allowed",
+          "default": false
+        }
+      }
+    },
+
+    "arguments": {
+      "type": "array",
+      "description": "Array of command-line arguments (flags, options, etc.)",
+      "items": {
+        "type": "object",
+        "required": ["name", "flags", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Internal identifier for this argument (alphanumeric with underscores)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of what this argument does"
+          },
+          "flags": {
+            "type": "array",
+            "description": "Flag/option names (e.g., ['-h', '--help'])",
+            "items": {
+              "type": "string",
+              "pattern": "^-"
+            },
+            "minItems": 1
+          },
+          "probability": {
+            "type": "number",
+            "description": "Probability (0.0-1.0) of including this argument in generated commands",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "default": 0.5
+          },
+          "group": {
+            "type": "string",
+            "description": "Logical group name for mutually exclusive or related arguments"
+          },
+          "depends_on": {
+            "type": "array",
+            "description": "Names or groups this argument depends on (must be present)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this argument must always be present",
+            "default": false
+          },
+          "generator": {
+            "type": "string",
+            "description": "Override value generation with a custom generator function (e.g., 'weighted_pairs')"
+          },
+          "params": {
+            "type": "object",
+            "description": "Parameters passed to the custom generator function",
+            "additionalProperties": true
+          },
+          "repeat_flag": {
+            "type": "object",
+            "description": "Configuration for arguments that can be repeated",
+            "properties": {
+              "min_occurs": {
+                "type": "integer",
+                "description": "Minimum number of occurrences",
+                "minimum": 0,
+                "default": 0
+              },
+              "max_occurs": {
+                "type": "integer",
+                "description": "Maximum number of occurrences",
+                "minimum": 1
+              }
+            }
+          },
+          "value": {
+            "type": "object",
+            "description": "Value specification for this argument",
+            "required": ["kind"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "description": "Type of value this argument accepts",
+                "enum": [
+                  "flag",
+                  "integer",
+                  "integer_optional",
+                  "float",
+                  "string",
+                  "enum",
+                  "list",
+                  "file",
+                  "directory",
+                  "custom"
+                ]
+              },
+              "min": {
+                "type": ["integer", "number"],
+                "description": "Minimum value for numeric types or ranges"
+              },
+              "max": {
+                "type": ["integer", "number"],
+                "description": "Maximum value for numeric types or ranges"
+              },
+              "values": {
+                "type": "array",
+                "description": "Predefined values for enum or list types",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "separator": {
+                "type": "string",
+                "description": "Separator character for list values (e.g., ',' for CSV, ':' for colon-separated)",
+                "default": ","
+              },
+              "min_count": {
+                "type": "integer",
+                "description": "Minimum number of items in a list",
+                "minimum": 1,
+                "default": 1
+              },
+              "max_count": {
+                "type": "integer",
+                "description": "Maximum number of items in a list",
+                "minimum": 1
+              },
+              "format": {
+                "type": "string",
+                "description": "Special formatting: 'csv_range' for numeric ranges (e.g., 1-3,5), 'plain' for simple join",
+                "enum": ["plain", "csv_range"],
+                "default": "plain"
+              },
+              "pattern": {
+                "type": "string",
+                "description": "Regex pattern for string validation",
+                "format": "regex"
+              },
+              "path": {
+                "type": "string",
+                "description": "Directory path for file/directory scanning, or base path for pattern matching"
+              },
+              "allow_empty": {
+                "type": "boolean",
+                "description": "Whether empty/null values are allowed",
+                "default": false
+              },
+              "default": {
+                "description": "Default value if argument is present without explicit value"
+              },
+              "generator": {
+                "type": "string",
+                "description": "Name of custom generator function for 'custom' kind (e.g., 'weighted_pairs', 'template')"
+              },
+              "params": {
+                "type": "object",
+                "description": "Parameters passed to the custom generator function",
+                "additionalProperties": true
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": { "kind": { "const": "flag" } }
+                },
+                "then": {
+                  "description": "Flag arguments have no additional value properties"
+                }
+              },
+              {
+                "if": {
+                  "properties": { "kind": { "enum": ["integer", "float"] } }
+                },
+                "then": {
+                  "required": ["min", "max"],
+                  "description": "Numeric types require min and max bounds"
+                }
+              },
+              {
+                "if": {
+                  "properties": { "kind": { "const": "enum" } }
+                },
+                "then": {
+                  "required": ["values"],
+                  "description": "Enum requires predefined values"
+                }
+              },
+              {
+                "if": {
+                  "properties": { "kind": { "const": "list" } }
+                },
+                "then": {
+                  "description": "List types should specify separator and count bounds"
+                }
+              },
+              {
+                "if": {
+                  "properties": { "kind": { "const": "custom" } }
+                },
+                "then": {
+                  "required": ["generator"],
+                  "description": "Custom types require a generator function name"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+
+    "positional": {
+      "type": "array",
+      "description": "Positional arguments (non-flag arguments in specific positions)",
+      "items": {
+        "type": "object",
+        "required": ["name", "position", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Internal identifier for this positional argument"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Zero-based position in argument list (0 = first positional)",
+            "minimum": 0
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this positional argument is required",
+            "default": false
+          },
+          "variadic": {
+            "type": "boolean",
+            "description": "Whether this argument accepts multiple values (must be last)",
+            "default": false
+          },
+          "value": {
+            "type": "object",
+            "description": "Value specification (same as for flags)",
+            "$ref": "#/properties/arguments/items/properties/value"
+          }
+        }
+      }
+    },
+
+    "subcommands": {
+      "type": "array",
+      "description": "Subcommands (like 'git commit', 'git push')",
+      "items": {
+        "type": "object",
+        "required": ["name", "arguments"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Subcommand name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the subcommand"
+          },
+          "aliases": {
+            "type": "array",
+            "description": "Alternative names for this subcommand",
+            "items": {
+              "type": "string"
+            }
+          },
+          "probability": {
+            "type": "number",
+            "description": "Probability (0.0-1.0) of using this subcommand",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "default": 0.5
+          },
+          "arguments": {
+            "type": "array",
+            "description": "Arguments specific to this subcommand",
+            "$ref": "#/properties/arguments"
+          },
+          "positional": {
+            "type": "array",
+            "description": "Positional arguments for this subcommand",
+            "$ref": "#/properties/positional"
+          }
+        }
+      }
+    },
+
+    "rules": {
+      "type": "array",
+      "description": "Validation rules for argument combinations",
+      "items": {
+        "type": "object",
+        "required": ["type", "arguments"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type of rule constraint",
+            "enum": [
+              "mutually_exclusive",
+              "one_of_required",
+              "all_or_none",
+              "requires",
+              "if_then",
+              "custom"
+            ]
+          },
+          "arguments": {
+            "type": "array",
+            "description": "List of argument names or groups this rule applies to",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable explanation of this rule"
+          },
+          "condition": {
+            "type": "string",
+            "description": "Conditional expression for if_then rules"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message when rule is violated"
+          }
+        }
+      }
+    },
+
+    "global_arguments": {
+      "type": "array",
+      "description": "Arguments that apply globally (before any subcommand)",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
