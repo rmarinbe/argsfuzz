@@ -133,6 +133,13 @@
                 "type": "integer",
                 "description": "Maximum number of occurrences",
                 "minimum": 1
+              },
+              "probability": {
+                "type": "number",
+                "description": "Probability (0.0-1.0) of repeating this argument",
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "default": 1.0
               }
             }
           },

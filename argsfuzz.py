@@ -18,12 +18,11 @@ import tempfile
 import importlib.util
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional, Any, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 import re
 
 try:
-    import jsonschema
     from jsonschema import validate, ValidationError
 except ImportError:
     print("ERROR: jsonschema package required. Install with: pip install jsonschema")
@@ -139,7 +138,6 @@ class Argument:
     required: bool
     repeat_flag: Optional[Dict[str, int]]
     value_spec: Dict[str, Any]
-    invalid_values: Optional[Dict[str, Any]]
     # Custom generator support
     generator: Optional[str] = None  # Name of registered generator function
     params: Optional[Dict[str, Any]] = None  # Parameters for generator
@@ -220,7 +218,6 @@ class ConstraintSolver:
                 required=arg_spec.get('required', False),
                 repeat_flag=arg_spec.get('repeat_flag'),
                 value_spec=arg_spec['value'],
-                invalid_values=arg_spec.get('invalid_values'),
                 generator=arg_spec.get('generator'),
                 params=arg_spec.get('params')
             )
@@ -258,7 +255,6 @@ class ConstraintSolver:
                     required=arg_spec.get('required', False),
                     repeat_flag=arg_spec.get('repeat_flag'),
                     value_spec=arg_spec['value'],
-                    invalid_values=arg_spec.get('invalid_values'),
                     generator=arg_spec.get('generator'),
                     params=arg_spec.get('params')
                 )
@@ -396,7 +392,8 @@ class Generator:
         if len(selected_args) >= target_count:
             return selected_args
             
-        available_args = [a for a in self.solver.arguments.keys() if a not in selected_args]
+        available_args = [a for a in self.solver.arguments.keys() 
+                         if a not in selected_args and self.solver.arguments[a].probability > 0]
         if not available_args:
             return selected_args
         
@@ -501,13 +498,14 @@ class Generator:
                 # Need at least one from the group
                 group_members = [m for m in self.solver.groups[dep] if m in selected]
                 if not group_members:
-                    # Add a random one from the group
-                    available = [m for m in self.solver.groups[dep] if m in arguments]
+                    # Add one from the group, respecting probability > 0
+                    available = [m for m in self.solver.groups[dep] 
+                                if m in arguments and arguments[m].probability > 0]
                     if available:
                         deps.add(self.rng.choice(available))
             else:
-                # Direct dependency
-                if dep in arguments:
+                # Direct dependency - only add if probability > 0
+                if dep in arguments and arguments[dep].probability > 0:
                     deps.add(dep)
         
         return deps
@@ -533,14 +531,19 @@ class Generator:
                         selected.discard(arg)
             
             elif rule.rule_type == 'one_of_required' and len(selected_from_rule) == 0:
-                # Add one randomly but deterministically
-                if expanded_args:
-                    selected.add(self.rng.choice(sorted(expanded_args)))
+                # Add one randomly but respect probability > 0
+                available = [arg for arg in expanded_args 
+                            if arg in self.solver.arguments and self.solver.arguments[arg].probability > 0]
+                if available:
+                    selected.add(self.rng.choice(sorted(available)))
             
             elif rule.rule_type == 'all_or_none':
                 if 0 < len(selected_from_rule) < len(expanded_args):
-                    # Either add all or remove all - deterministically add all
-                    selected.update(expanded_args)
+                    # Either add all or remove all - only add those with probability > 0
+                    available = [arg for arg in expanded_args 
+                                if arg in self.solver.arguments and self.solver.arguments[arg].probability > 0]
+                    if available:
+                        selected.update(available)
         
         return selected
     
@@ -1140,7 +1143,7 @@ class FuzzGenerator:
             should_be_invalid = self.rng.random() < self.gen_config.invalid_ratio
             
             # Generate combination
-            subcommand_name, selected_args, active_positional, solve_attempts = self.generator.generate_combination()
+            subcommand_name, selected_args, active_positional, _ = self.generator.generate_combination()
             
             # Randomly pick target argument count between min and max
             max_args = self.gen_config.max_args if self.gen_config.max_args is not None else self.config.get('generation', {}).get('max_args', 20)
@@ -1196,9 +1199,11 @@ class FuzzGenerator:
                 # Determine repetitions
                 repeat_count = 1
                 if arg.repeat_flag:
-                    min_occurs = arg.repeat_flag.get('min_occurs', 1)
-                    max_occurs = arg.repeat_flag.get('max_occurs', 1)
-                    repeat_count = self.rng.randint(min_occurs, max_occurs)
+                    repeat_probability = arg.repeat_flag.get('probability', 1.0)
+                    if self.rng.random() < repeat_probability:
+                        min_occurs = arg.repeat_flag.get('min_occurs', 1)
+                        max_occurs = arg.repeat_flag.get('max_occurs', 1)
+                        repeat_count = self.rng.randint(min_occurs, max_occurs)
                 
                 for _ in range(repeat_count):
                     value = self.generator.generate_value(
