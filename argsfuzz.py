@@ -341,6 +341,19 @@ class Generator:
             if arg and arg.required:
                 must_keep.add(arg_name)
             
+            # If this arg has dependencies, mark both the arg and its dependencies as must-keep
+            if arg and arg.depends_on:
+                must_keep.add(arg_name)  # Keep the dependent arg itself
+                # Mark all its dependencies as must-keep too
+                for dep in arg.depends_on:
+                    if dep in selected_args:
+                        must_keep.add(dep)
+                    elif dep in self.solver.groups:
+                        # Keep any group members that are selected
+                        for member in self.solver.groups[dep]:
+                            if member in selected_args:
+                                must_keep.add(member)
+            
             # Check if any other selected arg depends on this one
             for other_name in selected_args:
                 other_arg = self.solver.arguments.get(other_name)
@@ -476,19 +489,37 @@ class Generator:
         # Validate and fix rules (handles mutually_exclusive, one_of_required, etc.)
         if subcommand_name is None:
             selected = self._fix_rules(selected)
+            
+            # Re-resolve dependencies after fixing rules, since _fix_rules might have
+            # added or removed arguments, which could change dependency requirements
+            deps_added = True
+            while deps_added:
+                deps_added = False
+                new_deps = set()
+                for name in sorted(selected):  # Sorted for deterministic iteration
+                    deps = self._resolve_dependencies_for_args(name, selected, active_arguments)
+                    new_deps.update(deps - selected)
+                if new_deps:
+                    selected.update(new_deps)
+                    deps_added = True
         
-        # Limit to max_args
+        # Limit to max_args while preserving dependencies
         max_args = self.generation_params.get('max_args', 20)
-        if len(selected) > max_args:
-            # Deterministically select first N alphabetically
-            selected = set(sorted(selected)[:max_args])
+        selected_list = sorted(selected)
+        if len(selected_list) > max_args:
+            # Use trim function that preserves dependencies and required args
+            selected_list = self._trim_to_target_count(selected_list, max_args)
         
         # Convert to sorted list for deterministic iteration
-        return subcommand_name, sorted(selected), active_positional, 1
+        return subcommand_name, selected_list, active_positional, 1
     
     def _resolve_dependencies_for_args(self, arg_name: str, selected: Set[str], 
                                        arguments: Dict[str, Argument]) -> Set[str]:
-        """Resolve dependencies for an argument"""
+        """Resolve dependencies for an argument
+        
+        Dependencies are REQUIRED when the dependent argument is selected,
+        regardless of their individual probability settings.
+        """
         arg = arguments[arg_name]
         deps = set()
         
@@ -498,14 +529,15 @@ class Generator:
                 # Need at least one from the group
                 group_members = [m for m in self.solver.groups[dep] if m in selected]
                 if not group_members:
-                    # Add one from the group, respecting probability > 0
-                    available = [m for m in self.solver.groups[dep] 
-                                if m in arguments and arguments[m].probability > 0]
+                    # Add one from the group (pick one that exists in arguments)
+                    available = [m for m in self.solver.groups[dep] if m in arguments]
                     if available:
-                        deps.add(self.rng.choice(available))
+                        # Prefer those with probability > 0, but fallback to any if needed
+                        with_prob = [m for m in available if arguments[m].probability > 0]
+                        deps.add(self.rng.choice(with_prob if with_prob else available))
             else:
-                # Direct dependency - only add if probability > 0
-                if dep in arguments and arguments[dep].probability > 0:
+                # Direct dependency - always add if it exists (dependencies are required!)
+                if dep in arguments:
                     deps.add(dep)
         
         return deps
@@ -1158,6 +1190,21 @@ class FuzzGenerator:
             # Re-validate rules after adjusting count
             selected_set = set(selected_args)
             selected_set = self.generator._fix_rules(selected_set)
+            
+            # Re-resolve dependencies after fixing rules, since _fix_rules might have
+            # added or removed arguments, which could change dependency requirements
+            active_arguments = self.solver.subcommands[subcommand_name].arguments if subcommand_name else self.solver.arguments
+            deps_added = True
+            while deps_added:
+                deps_added = False
+                new_deps = set()
+                for name in sorted(selected_set):
+                    deps = self.generator._resolve_dependencies_for_args(name, selected_set, active_arguments)
+                    new_deps.update(deps - selected_set)
+                if new_deps:
+                    selected_set.update(new_deps)
+                    deps_added = True
+            
             selected_args = sorted(selected_set)
             
             # Build command line (WITHOUT tool name)
