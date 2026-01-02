@@ -1,8 +1,38 @@
 # argsfuzz
 
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/rmarinbe/argsfuzz)
+
 A schema-driven CLI argument fuzzing generator for testing command-line tools.
 
 Generate valid and invalid command-line argument combinations from a declarative JSON schema. Useful for fuzzing, integration testing, and exploring CLI tool behavior.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Complete Example](#complete-example)
+- [Schema Format](#schema-format)
+  - [Value Types](#value-types)
+  - [Value Type Options](#value-type-options)
+  - [Argument-Level Properties](#argument-level-properties)
+  - [Regex Pattern Support](#regex-pattern-support)
+  - [Custom Generators](#custom-generators)
+  - [Constraints](#constraints)
+  - [Rules](#rules)
+  - [Subcommands](#subcommands)
+  - [Positional Arguments](#positional-arguments)
+- [CLI Options](#cli-options)
+- [Examples](#examples)
+- [Pipeline Architecture](#pipeline-architecture)
+- [Integration with Fuzzers](#integration-with-fuzzers)
+- [Design Notes](#design-notes)
+- [Changelog](#changelog)
+- [License](#license)
+- [Contributing](#contributing)
+- [Author](#author)
 
 ## Features
 
@@ -71,6 +101,134 @@ fuzzer = FuzzGenerator(
 )
 count = fuzzer.run()
 print(f"Generated {count} test cases")
+```
+
+## Complete Example
+
+This walkthrough creates a fuzzing configuration for a hypothetical `imgconv` image conversion tool, demonstrating most argsfuzz features.
+
+### Step 1: Define the Schema
+
+Create `imgconv.json`:
+
+```json
+{
+  "metadata": {
+    "version": "1.0",
+    "tool_name": "imgconv",
+    "description": "Image conversion tool fuzzer"
+  },
+  "generation": {
+    "max_args": 8,
+    "equals_form_probability": 0.3
+  },
+  "arguments": [
+    {
+      "name": "input",
+      "flags": ["-i", "--input"],
+      "required": true,
+      "description": "Input image file",
+      "value": {
+        "kind": "file",
+        "path": "/tmp/images",
+        "pattern": ".*\\.(png|jpg|gif)"
+      }
+    },
+    {
+      "name": "output",
+      "flags": ["-o", "--output"],
+      "required": true,
+      "description": "Output image file",
+      "value": { "kind": "string", "pattern": "[a-z]+\\.(png|jpg|webp)" }
+    },
+    {
+      "name": "format",
+      "flags": ["-f", "--format"],
+      "probability": 0.7,
+      "description": "Output format",
+      "value": {
+        "kind": "enum",
+        "values": ["png", "jpg", "webp", "gif", "bmp"]
+      }
+    },
+    {
+      "name": "quality",
+      "flags": ["-q", "--quality"],
+      "probability": 0.5,
+      "depends_on": ["format=jpg,webp"],
+      "description": "Compression quality (only for lossy formats)",
+      "value": { "kind": "integer", "min": 1, "max": 100 }
+    },
+    {
+      "name": "resize",
+      "flags": ["--resize"],
+      "probability": 0.3,
+      "description": "Resize dimensions",
+      "value": { "kind": "string", "pattern": "[0-9]{2,4}x[0-9]{2,4}" }
+    },
+    {
+      "name": "verbose",
+      "flags": ["-v", "--verbose"],
+      "probability": 0.2,
+      "group": "verbosity",
+      "value": { "kind": "flag" }
+    },
+    {
+      "name": "quiet",
+      "flags": ["-q", "--quiet"],
+      "probability": 0.2,
+      "group": "verbosity",
+      "value": { "kind": "flag" }
+    }
+  ],
+  "rules": [
+    {
+      "type": "mutually_exclusive",
+      "arguments": ["verbosity"],
+      "description": "Cannot be both verbose and quiet"
+    }
+  ]
+}
+```
+
+### Step 2: Generate Test Cases
+
+```bash
+# Generate 50 test cases
+python argsfuzz.py imgconv.json -n 50 --seed 42 -o corpus.txt
+
+# View sample output
+head -5 corpus.txt
+```
+
+**Sample output:**
+```
+--input /tmp/images/photo.jpg --output result.webp --format webp --quality 85
+-i /tmp/images/test.png -o converted.png -f png --resize 800x600 -v
+--input=/tmp/images/icon.gif --output=thumb.jpg --format=jpg --quality 92
+-i /tmp/images/banner.png -o final.bmp -f bmp --quiet
+--input /tmp/images/logo.jpg --output small.webp -f webp --quality 75 --resize 128x128
+```
+
+### Step 3: Key Features Demonstrated
+
+| Feature | Example in Schema |
+|---------|-------------------|
+| **Required args** | `input` and `output` are always present |
+| **Conditional deps** | `quality` only appears when `format=jpg,webp` |
+| **Mutual exclusion** | `verbose` and `quiet` never appear together |
+| **Regex patterns** | `resize` generates values like `1920x1080` |
+| **File patterns** | `input` filters for image file extensions |
+| **Probability control** | `resize` appears in ~30% of cases |
+
+### Step 4: Use with AFL++
+
+```bash
+# Generate corpus directory
+python argsfuzz.py imgconv.json -n 1000 -f directory -o corpus/
+
+# Run AFL++
+afl-fuzz -i corpus/ -o findings/ -- ./imgconv @@
 ```
 
 ## Schema Format
@@ -342,6 +500,47 @@ An argument can require another argument or group to be present:
 ```
 
 The `output_file` argument (or group) must be present for `output_compression` to appear.
+
+#### Conditional Dependencies: Value-Based Requirements
+
+Beyond simple presence checks, you can specify that an argument should only appear when another argument has specific values. Use the syntax `"arg_name=value1,value2"`:
+
+```json
+{
+  "name": "format",
+  "flags": ["--format"],
+  "value": {
+    "kind": "enum",
+    "values": ["plain", "gzip", "bzip2", "xz", "lz4"]
+  }
+},
+{
+  "name": "compression_level",
+  "flags": ["--level"],
+  "depends_on": ["format=gzip,bzip2,xz,lz4"],
+  "value": {
+    "kind": "integer",
+    "min": 1,
+    "max": 9
+  }
+}
+```
+
+In this example, `--level` will **only** appear when `--format` is a compression format (`gzip`, `bzip2`, `xz`, or `lz4`). If `--format` is set to `plain`, the `compression_level` argument is automatically excluded since plain text doesn't support compression levels.
+
+**Syntax formats:**
+
+| Format | Meaning |
+|--------|---------|
+| `"arg_name"` | Simple dependency - arg must be present |
+| `"arg_name=value"` | Conditional - arg must have this exact value |
+| `"arg_name=val1,val2,val3"` | Conditional - arg must have one of these values |
+
+**Use cases:**
+- Format-specific parameters (e.g., compression level only for compressed formats)
+- Mode-specific options (e.g., verbosity levels only in debug mode)
+- Protocol-specific settings (e.g., TLS options only for HTTPS)
+- Feature flags that enable additional configuration
 
 #### Repeat Flag: Multiple Occurrences
 
@@ -693,11 +892,20 @@ def gen_hex(rng: random.Random, params: Dict[str, Any]) -> str:
 
 ### Constraints
 
-**Dependencies** - Argument requires another to be present:
+**Simple Dependencies** - Argument requires another to be present:
 ```json
 {
   "name": "output_format",
   "depends_on": ["output_file"],
+  ...
+}
+```
+
+**Conditional Dependencies** - Argument only appears when another has specific values:
+```json
+{
+  "name": "compression_level",
+  "depends_on": ["format=gzip,bzip2"],
   ...
 }
 ```
@@ -911,6 +1119,23 @@ Use `group` property to logically group related arguments, then apply a `mutuall
   ]
 }
 ```
+
+## Changelog
+
+### v1.0.0 (2026-01-01)
+
+- **Initial release**
+- Schema-driven argument generation from JSON configuration
+- Support for multiple value types: flags, integers, floats, strings, enums, lists, files, directories
+- Constraint system: dependencies, mutual exclusion, one_of_required, all_or_none rules
+- Conditional dependencies with value-based requirements (`depends_on: ["format=gzip,bzip2"]`)
+- Custom generator support via Python plugins
+- Subcommand and positional argument support
+- Regex pattern generation for strings, files, and directories
+- Invalid case generation through mutation
+- Reproducible output with seed-based randomization
+- AFL/libFuzzer compatible corpus output
+- Modular package architecture
 
 ## License
 
