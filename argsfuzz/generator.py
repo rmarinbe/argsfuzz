@@ -14,11 +14,13 @@ class Generator:
     
     def __init__(self, config: Dict[str, Any], solver: ConstraintSolver, 
                  rng: random.Random, create_dummy_files: bool = False,
+                 min_args_override: Optional[int] = None,
                  max_args_override: Optional[int] = None):
         self.config = config
         self.solver = solver
         self.rng = rng
         self.generation_params = config.get('generation', {})
+        self.min_args_override = min_args_override  # Command-line override
         self.max_args_override = max_args_override  # Command-line override
         self.constraint_validator = ConstraintValidator(solver, rng)
         self.value_generator = ValueGenerator(rng, create_dummy_files)
@@ -44,11 +46,16 @@ class Generator:
             selected = self.constraint_validator.ensure_valid(selected, active_arguments, 
                                                               skip_conditional_deps=True)
         
-        # Limit to max_args (use command-line override if provided)
+        # Pick random target count between min_args and max_args for this combination
+        min_args = self.min_args_override if self.min_args_override is not None else self.generation_params.get('min_args', 1)
         max_args = self.max_args_override if self.max_args_override is not None else self.generation_params.get('max_args', 20)
+        target_count = self.rng.randint(min_args, max_args)
+        
         selected_list = sorted(selected)
-        if len(selected_list) > max_args:
-            selected_list = self._trim_to_target_count(selected_list, max_args, active_arguments)
+        if len(selected_list) > target_count:
+            selected_list = self._trim_to_target_count(selected_list, target_count, active_arguments)
+        elif len(selected_list) < target_count:
+            selected_list = self.add_to_target_count(selected_list, target_count)
         
         return subcommand_name, selected_list, active_positional, 1
     
