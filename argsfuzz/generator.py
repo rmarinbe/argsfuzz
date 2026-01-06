@@ -13,11 +13,13 @@ class Generator:
     """Generates valid command-line argument combinations."""
     
     def __init__(self, config: Dict[str, Any], solver: ConstraintSolver, 
-                 rng: random.Random, create_dummy_files: bool = False):
+                 rng: random.Random, create_dummy_files: bool = False,
+                 max_args_override: Optional[int] = None):
         self.config = config
         self.solver = solver
         self.rng = rng
         self.generation_params = config.get('generation', {})
+        self.max_args_override = max_args_override  # Command-line override
         self.constraint_validator = ConstraintValidator(solver, rng)
         self.value_generator = ValueGenerator(rng, create_dummy_files)
     
@@ -42,8 +44,8 @@ class Generator:
             selected = self.constraint_validator.ensure_valid(selected, active_arguments, 
                                                               skip_conditional_deps=True)
         
-        # Limit to max_args
-        max_args = self.generation_params.get('max_args', 20)
+        # Limit to max_args (use command-line override if provided)
+        max_args = self.max_args_override if self.max_args_override is not None else self.generation_params.get('max_args', 20)
         selected_list = sorted(selected)
         if len(selected_list) > max_args:
             selected_list = self._trim_to_target_count(selected_list, max_args, active_arguments)

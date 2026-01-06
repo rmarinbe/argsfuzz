@@ -56,7 +56,8 @@ class FuzzGenerator:
         
         self._log("[4/7] Initializing generator...")
         self.generator = Generator(self.config, self.solver, self.rng, 
-                                   self.gen_config.create_dummy_files)
+                                   self.gen_config.create_dummy_files,
+                                   max_args_override=self.gen_config.max_args)
         
         self._log("[5/7] Initializing mutator...")
         self.mutator = Mutator(self.config, self.solver, self.rng)
