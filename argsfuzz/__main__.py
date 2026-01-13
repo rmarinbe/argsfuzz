@@ -29,10 +29,10 @@ Examples:
         """
     )
     
-    parser.add_argument('config', type=Path,
-                        help='Path to fuzzing configuration JSON file')
+    parser.add_argument('config', type=Path, metavar='CONFIG_FILE',
+                        help='Fuzzing configuration JSON (e.g., my_tool.json)')
     parser.add_argument('-s', '--schema', type=Path, default=None,
-                        help='Path to schema file (default: argsfuzz-schema.json)')
+                        help='Validation schema file (default: argsfuzz-schema.json in package dir)')
     parser.add_argument('-n', '--num-generations', type=int, default=100,
                         help='Number of test cases to generate (default: 100)')
     parser.add_argument('--min-args', type=int, default=1,
