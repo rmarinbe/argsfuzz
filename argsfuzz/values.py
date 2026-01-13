@@ -168,15 +168,17 @@ class ValueGenerator:
         # Generate dummy directory
         return self._create_dummy_directory(scan_path, pattern)
     
-    def _scan_files(self, scan_path: str, pattern: str) -> List[str]:
-        """Scan directory for files matching pattern."""
+    def _scan_files(self, scan_path: str, pattern: str, max_results: int = 100) -> List[str]:
+        """Scan directory recursively for files matching pattern."""
         files = []
         try:
-            for entry in os.listdir(scan_path):
-                full_path = os.path.join(scan_path, entry)
-                if os.path.isfile(full_path):
-                    if not pattern or re.search(pattern, entry) or re.search(pattern, full_path):
+            for root, _, filenames in os.walk(scan_path):
+                for f in filenames:
+                    full_path = os.path.join(root, f)
+                    if not pattern or re.search(pattern, f) or re.search(pattern, full_path):
                         files.append(full_path)
+                if len(files) >= max_results:
+                    break
         except (PermissionError, OSError):
             pass
         return files
