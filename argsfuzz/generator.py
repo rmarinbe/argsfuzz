@@ -89,7 +89,7 @@ class Generator:
         return sorted(must_keep)
     
     def add_to_target_count(self, selected_args: List[str], target_count: int) -> List[str]:
-        """Add arguments to reach target count while respecting rules."""
+        """Add arguments to reach target count while respecting rules and probabilities."""
         if len(selected_args) >= target_count:
             return selected_args
         
@@ -99,14 +99,22 @@ class Generator:
             return selected_args
         
         current = set(selected_args)
-        self.rng.shuffle(available)
         
-        for arg_name in available:
-            if len(current) >= target_count:
-                break
+        # Use weighted random selection based on probabilities
+        # This avoids bias and respects probability distribution
+        while len(current) < target_count and available:
+            # Get probabilities for all available arguments
+            weights = [self.solver.arguments[name].probability for name in available]
             
-            if not self.constraint_validator.check_rule_violation(current, arg_name):
-                current.add(arg_name)
+            # Weighted random selection
+            selected = self.rng.choices(available, weights=weights, k=1)[0]
+            
+            # Check if adding this argument violates any rules
+            if not self.constraint_validator.check_rule_violation(current, selected):
+                current.add(selected)
+            
+            # Remove from available pool (don't try same arg twice)
+            available.remove(selected)
         
         return sorted(current)
     
