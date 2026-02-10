@@ -2,7 +2,7 @@
 
 import random
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 try:
     from .config import GenerationConfig
@@ -27,7 +27,7 @@ except ImportError:
 class FuzzGenerator:
     """Main fuzzing generator orchestrator."""
     
-    def __init__(self, config_path: Path, schema_path: Path, gen_config: GenerationConfig):
+    def __init__(self, config_path: Path, schema_path: Path, gen_config: GenerationConfig, schema_data: Optional[dict] = None):
         self.config_path = config_path
         self.schema_path = schema_path
         self.gen_config = gen_config
@@ -35,7 +35,10 @@ class FuzzGenerator:
         self.verbose = gen_config.verbose
         
         # Pipeline components (initialized in run())
-        self.validator = SchemaValidator(schema_path)
+        if schema_data is not None:
+            self.validator = SchemaValidator(schema_data=schema_data)
+        else:
+            self.validator = SchemaValidator(schema_path=schema_path)
         self.config = None
         self.solver = None
         self.constraint_validator = None

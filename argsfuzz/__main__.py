@@ -65,15 +65,32 @@ Examples:
         print(f"ERROR: Configuration file not found: {args.config}")
         sys.exit(1)
     
+    schema_data = None
     if args.schema is None:
-        # Look for schema in package directory or current directory
-        pkg_schema = Path(__file__).parent.parent / 'argsfuzz-schema.json'
-        if pkg_schema.exists():
-            args.schema = pkg_schema
+        # Try filesystem paths first
+        candidates = [
+            Path(__file__).parent / 'argsfuzz-schema.json',
+            Path(__file__).parent.parent / 'argsfuzz-schema.json',
+            Path('argsfuzz-schema.json'),
+        ]
+        found = next((p for p in candidates if p.exists()), None)
+        if found:
+            args.schema = found
         else:
-            args.schema = Path('argsfuzz-schema.json')
+            # Load from inside zip archive (for .pyz distribution)
+            import json as _json
+            import zipfile
+            import os
+            archive_path = os.path.dirname(__file__)
+            if zipfile.is_zipfile(archive_path):
+                with zipfile.ZipFile(archive_path) as zf:
+                    schema_bytes = zf.read('argsfuzz-schema.json')
+                    schema_data = _json.loads(schema_bytes.decode('utf-8'))
+            else:
+                print("ERROR: Schema file not found (not on disk or in package)")
+                sys.exit(1)
     
-    if not args.schema.exists():
+    if args.schema is not None and not args.schema.exists():
         print(f"ERROR: Schema file not found: {args.schema}")
         sys.exit(1)
     
@@ -82,7 +99,7 @@ Examples:
         sys.exit(1)
     
     if not 0.0 <= args.invalid_ratio <= 1.0:
-        print(f"ERROR: Invalid ratio must be between 0.0 and 1.0")
+        print("ERROR: Invalid ratio must be between 0.0 and 1.0")
         sys.exit(1)
     
     verbose = not args.quiet and sys.stdout.isatty()
@@ -101,7 +118,7 @@ Examples:
     )
     
     try:
-        generator = FuzzGenerator(args.config, args.schema, gen_config)
+        generator = FuzzGenerator(args.config, args.schema, gen_config, schema_data=schema_data)
         count = generator.run()
         sys.exit(0 if count > 0 else 1)
     except Exception as e:
