@@ -23,6 +23,11 @@ jobs:
           cp argsfuzz-schema.json argsfuzz/argsfuzz-schema.json
           python -m zipapp argsfuzz -o argsfuzz.pyz -p "/usr/bin/env python3"
 
+      - name: Smoke test
+        run: |
+          pip install jsonschema
+          python argsfuzz.pyz -h
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
