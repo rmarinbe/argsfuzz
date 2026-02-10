@@ -7,8 +7,12 @@ are valid according to rules and dependencies.
 import random
 from typing import Dict, List, Optional, Set, Tuple
 
-from .config import Argument
-from .solver import ConstraintSolver
+try:
+    from .config import Argument
+    from .solver import ConstraintSolver
+except ImportError:
+    from config import Argument
+    from solver import ConstraintSolver
 
 
 class ConstraintValidator:

@@ -7,7 +7,10 @@ import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-from .registry import GeneratorRegistry
+try:
+    from .registry import GeneratorRegistry
+except ImportError:
+    from registry import GeneratorRegistry
 
 try:
     import rstr

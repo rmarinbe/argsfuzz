@@ -3,10 +3,16 @@
 import random
 from typing import Dict, List, Set, Tuple, Optional, Any
 
-from .config import Argument, PositionalArg
-from .solver import ConstraintSolver
-from .constraints import ConstraintValidator
-from .values import ValueGenerator
+try:
+    from .config import Argument, PositionalArg
+    from .solver import ConstraintSolver
+    from .constraints import ConstraintValidator
+    from .values import ValueGenerator
+except ImportError:
+    from config import Argument, PositionalArg
+    from solver import ConstraintSolver
+    from constraints import ConstraintValidator
+    from values import ValueGenerator
 
 
 class Generator:

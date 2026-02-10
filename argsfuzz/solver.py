@@ -3,7 +3,10 @@
 import random
 from typing import Dict, List, Any
 
-from .config import Argument, PositionalArg, Rule, Subcommand
+try:
+    from .config import Argument, PositionalArg, Rule, Subcommand
+except ImportError:
+    from config import Argument, PositionalArg, Rule, Subcommand
 
 
 class ConstraintSolver:

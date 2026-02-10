@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-from .config import OutputFormat
+try:
+    from .config import OutputFormat
+except ImportError:
+    from config import OutputFormat
 
 
 class CorpusWriter:

@@ -4,8 +4,12 @@ import sys
 import argparse
 from pathlib import Path
 
-from .config import GenerationConfig, OutputFormat
-from .fuzzer import FuzzGenerator
+try:
+    from .config import GenerationConfig, OutputFormat
+    from .fuzzer import FuzzGenerator
+except ImportError:
+    from config import GenerationConfig, OutputFormat
+    from fuzzer import FuzzGenerator
 
 
 def main():

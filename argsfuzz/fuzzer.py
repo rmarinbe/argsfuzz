@@ -4,14 +4,24 @@ import random
 from pathlib import Path
 from typing import Dict, List
 
-from .config import GenerationConfig
-from .schema import SchemaValidator
-from .solver import ConstraintSolver
-from .constraints import ConstraintValidator
-from .generator import Generator
-from .mutator import Mutator
-from .writer import CorpusWriter
-from .registry import GeneratorRegistry
+try:
+    from .config import GenerationConfig
+    from .schema import SchemaValidator
+    from .solver import ConstraintSolver
+    from .constraints import ConstraintValidator
+    from .generator import Generator
+    from .mutator import Mutator
+    from .writer import CorpusWriter
+    from .registry import GeneratorRegistry
+except ImportError:
+    from config import GenerationConfig
+    from schema import SchemaValidator
+    from solver import ConstraintSolver
+    from constraints import ConstraintValidator
+    from generator import Generator
+    from mutator import Mutator
+    from writer import CorpusWriter
+    from registry import GeneratorRegistry
 
 
 class FuzzGenerator:

@@ -3,7 +3,10 @@
 import random
 from typing import Dict, List, Any
 
-from .solver import ConstraintSolver
+try:
+    from .solver import ConstraintSolver
+except ImportError:
+    from solver import ConstraintSolver
 
 
 class Mutator:
