@@ -207,8 +207,11 @@
                 "format": "regex"
               },
               "path": {
-                "type": "string",
-                "description": "Directory path for file/directory scanning, or base path for pattern matching"
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ],
+                "description": "Directory path(s) for file/directory scanning. Accepts a single string or an array of paths to scan."
               },
               "allow_empty": {
                 "type": "boolean",

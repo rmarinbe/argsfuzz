@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/rmarinbe/argsfuzz)
+[![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](https://github.com/rmarinbe/argsfuzz)
 
 A schema-driven CLI argument fuzzing generator for testing command-line tools.
 
@@ -275,8 +275,8 @@ Configuration files define the CLI structure:
 | `string` | Text value | `pattern` (optional regex) |
 | `enum` | One of predefined values | `values` |
 | `list` | Multiple values | `values`, `separator`, `min_count`, `max_count` |
-| `file` | File path | `path` (optional base dir), `pattern` (optional regex) |
-| `directory` | Directory path | `path` (optional base dir), `pattern` (optional regex) |
+| `file` | File path | `path` (optional dir or array of dirs), `pattern` (optional regex) |
+| `directory` | Directory path | `path` (optional dir or array of dirs), `pattern` (optional regex) |
 | `custom` | Custom generator function | `generator`, `params` |
 
 ### Value Type Options
@@ -393,10 +393,12 @@ Output examples:
 
 #### File/Directory Paths: `path`
 
-The `path` option controls how file/directory values are generated:
+The `path` option controls how file/directory values are generated. It accepts either a **single string** or an **array of strings** to scan multiple directories:
 
-- **If path exists** (directory): Lists items in that directory and returns one randomly
-- **If path missing**: Generates a filename matching `pattern` (if specified) in that base path
+- **If path(s) exist**: Scans all directories, picks one path uniformly at random, then picks a random item from that path (avoids bias toward larger directories)
+- **If no paths exist**: Generates a filename matching `pattern` (if specified) in the first base path
+
+**Single path:**
 
 ```json
 {
@@ -410,9 +412,24 @@ The `path` option controls how file/directory values are generated:
 }
 ```
 
+**Multiple paths:**
+
+```json
+{
+  "name": "input_file",
+  "flags": ["--in"],
+  "value": {
+    "kind": "file",
+    "path": ["/var/data/set_a", "/var/data/set_b", "/opt/extra_data"],
+    "pattern": "[a-z0-9_]+\\.dat"
+  }
+}
+```
+
 Output behaviors:
-- `/var/data/` has files → Returns one (e.g., `/var/data/sensor_001.dat`)
-- `/var/data/` missing → Generates (e.g., `/var/data/abc123xyz.dat`)
+- Paths exist and have files → Picks a path uniformly, then a random file from it
+- `/var/data/` has 500 files, `/opt/extra_data/` has 10 → Each directory is equally likely to be chosen (no bias from directory size)
+- No paths exist → Generates a dummy filename (e.g., `/var/data/set_a/abc123xyz.dat`)
 
 ### Argument-Level Properties
 
@@ -591,7 +608,7 @@ Output examples: `XKL-4829-qm`, `ABC-1234-xy`, `QRS-9012-ab`
 
 For files, the pattern serves two purposes:
 
-1. **Filtering**: If `path` points to an existing directory, files are filtered by the pattern
+1. **Filtering**: If `path` points to existing directories, files are filtered by the pattern
 2. **Generation**: If no matching files found, generates filenames matching the pattern
 
 ```json
@@ -600,19 +617,19 @@ For files, the pattern serves two purposes:
   "flags": ["--config"],
   "value": {
     "kind": "file",
-    "path": "/etc/myapp/",
+    "path": ["/etc/myapp/", "/opt/myapp/configs/"],
     "pattern": "[a-zA-Z0-9_-]+\\.json"
   }
 }
 ```
 
 Behavior:
-- If `/etc/myapp/` exists: Returns a random `.json` file from that directory
-- If directory missing or empty: Generates a filename like `config_a3Xk9.json`
+- If paths exist: Returns a random `.json` file, with each path equally likely to be selected
+- If all directories missing or empty: Generates a filename like `config_a3Xk9.json`
 
 #### Directory Patterns
 
-Same behavior as files - filter existing directories or generate matching names:
+Same behavior as files - filter existing directories or generate matching names. Also supports multiple paths:
 
 ```json
 {
@@ -620,7 +637,7 @@ Same behavior as files - filter existing directories or generate matching names:
   "flags": ["-o"],
   "value": {
     "kind": "directory",
-    "path": "/var/log/",
+    "path": ["/var/log/", "/tmp/logs/"],
     "pattern": "app_[0-9]{4}"
   }
 }
@@ -1121,6 +1138,12 @@ Use `group` property to logically group related arguments, then apply a `mutuall
 ```
 
 ## Changelog
+
+### v1.1.0 (2026-02-12)
+
+- **Multi-path support**: `path` in `file` and `directory` value types now accepts an array of strings in addition to a single string
+- **Uniform path selection**: When multiple paths are provided, each path is selected with equal probability before picking a random item within it, eliminating bias toward directories with more entries
+- Backward compatible — existing configs with a single `path` string continue to work unchanged
 
 ### v1.0.0 (2026-01-01)
 

@@ -143,33 +143,53 @@ class ValueGenerator:
         ranges.append(f"{start}-{prev}" if start != prev else str(start))
         return ",".join(ranges)
     
+    def _normalize_paths(self, raw_path) -> List[str]:
+        """Normalize path spec into a list of paths (supports string or list)."""
+        if isinstance(raw_path, list):
+            return raw_path
+        if isinstance(raw_path, str) and raw_path:
+            return [raw_path]
+        return []
+
     def _generate_file(self, spec: Dict[str, Any]) -> str:
         """Generate a file path."""
-        scan_path = spec.get('path', '')
+        paths = self._normalize_paths(spec.get('path', ''))
         pattern = spec.get('pattern', '')
         
-        # Try to find real files
-        if scan_path and os.path.isdir(scan_path):
-            files = self._scan_files(scan_path, pattern)
-            if files:
-                return self.rng.choice(files)
+        # Collect files per path to avoid bias toward larger directories
+        files_per_path = []
+        for scan_path in paths:
+            if os.path.isdir(scan_path):
+                files = self._scan_files(scan_path, pattern)
+                if files:
+                    files_per_path.append(files)
+        if files_per_path:
+            # Pick a path uniformly, then a file within it
+            return self.rng.choice(self.rng.choice(files_per_path))
         
-        # Generate dummy file
-        return self._create_dummy_file(scan_path, pattern)
+        # Generate dummy file using first path as base
+        base = paths[0] if paths else ''
+        return self._create_dummy_file(base, pattern)
     
     def _generate_directory(self, spec: Dict[str, Any]) -> str:
         """Generate a directory path."""
-        scan_path = spec.get('path', '')
+        paths = self._normalize_paths(spec.get('path', ''))
         pattern = spec.get('pattern', '')
         
-        # Try to find real directories
-        if scan_path and os.path.isdir(scan_path):
-            dirs = self._scan_directories(scan_path, pattern)
-            if dirs:
-                return self.rng.choice(dirs)
+        # Collect dirs per path to avoid bias toward larger directories
+        dirs_per_path = []
+        for scan_path in paths:
+            if os.path.isdir(scan_path):
+                dirs = self._scan_directories(scan_path, pattern)
+                if dirs:
+                    dirs_per_path.append(dirs)
+        if dirs_per_path:
+            # Pick a path uniformly, then a directory within it
+            return self.rng.choice(self.rng.choice(dirs_per_path))
         
-        # Generate dummy directory
-        return self._create_dummy_directory(scan_path, pattern)
+        # Generate dummy directory using first path as base
+        base = paths[0] if paths else ''
+        return self._create_dummy_directory(base, pattern)
     
     def _scan_files(self, scan_path: str, pattern: str, max_results: int = 100) -> List[str]:
         """Scan directory recursively for files matching pattern."""
