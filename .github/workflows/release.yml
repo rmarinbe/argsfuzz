@@ -20,7 +20,6 @@ jobs:
 
       - name: Build .pyz release
         run: |
-          cp argsfuzz-schema.json argsfuzz/argsfuzz-schema.json
           python -m zipapp argsfuzz -o argsfuzz.pyz -p "/usr/bin/env python3"
 
       - name: Smoke test
