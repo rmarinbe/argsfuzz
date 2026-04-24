@@ -28,12 +28,16 @@ class CorpusWriter:
     def write(self, command_line: str) -> None:
         """Write a single test case."""
         try:
+            # Use surrogateescape to preserve non-UTF-8 bytes from filesystem
+            # paths (e.g., filenames with raw bytes like 0x8c surfaced by
+            # os.walk as lone surrogates \udc8c). Strict UTF-8 encoding would
+            # raise UnicodeEncodeError on such characters.
             if self.output_format == OutputFormat.DIRECTORY:
                 file_path = self.output_path / f"test_{self.generation_count:06d}.txt"
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, 'w', encoding='utf-8', errors='surrogateescape') as f:
                     f.write(command_line + '\n')
             else:
-                with open(self.output_path, 'a', encoding='utf-8') as f:
+                with open(self.output_path, 'a', encoding='utf-8', errors='surrogateescape') as f:
                     f.write(command_line + '\n')
             
             self.generation_count += 1
